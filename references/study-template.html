@@ -1,0 +1,625 @@
+<!--
+  SNOWFLAKE VALUE MAP - HTML STUDY TEMPLATE
+  Design system extracted from production reports.
+  
+  USAGE: When generating HTML output, follow this structure exactly.
+  Replace comment placeholders with dynamic content.
+  Replicate .uc-card blocks for each READY/NEAR use case.
+  Replicate table rows for each inventory item / gap / roadmap step.
+  
+  COLOR SYSTEM:
+  - Ready/Phase 1: #10B981 (green)
+  - Near/Phase 2:  #F59E0B (amber)  
+  - Gap/Phase 3:   #EF4444 (red)
+  - N/A:           #9CA3AF (gray)
+  - Snowflake:     #29B5E8 (blue)
+  - Dark:          #1B2A4A (navy)
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title><!-- {{entity_name}} --> - Snowflake Value Map Study</title>
+<style>
+:root {
+  --snow-blue: #29B5E8;
+  --snow-dark: #1B2A4A;
+  --snow-light: #F4F8FB;
+  --sidebar-width: 280px;
+  --ready-green: #10B981;
+  --near-amber: #F59E0B;
+  --gap-red: #EF4444;
+  --na-gray: #9CA3AF;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #1F2937;
+  line-height: 1.6;
+  background: #fff;
+}
+/* Sidebar TOC */
+.sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: var(--sidebar-width);
+  height: 100vh;
+  overflow-y: auto;
+  background: var(--snow-dark);
+  color: #CBD5E1;
+  padding: 24px 16px;
+  z-index: 100;
+}
+.sidebar::-webkit-scrollbar { width: 4px; }
+.sidebar::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+.sidebar .logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #334155;
+}
+.sidebar .logo svg { width: 28px; height: 28px; }
+.sidebar .logo span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+.sidebar nav ul { list-style: none; }
+.sidebar nav > ul > li { margin-bottom: 4px; }
+.sidebar nav a {
+  display: block;
+  padding: 6px 10px;
+  color: #94A3B8;
+  text-decoration: none;
+  font-size: 13px;
+  border-radius: 4px;
+  transition: all 0.15s;
+}
+.sidebar nav a:hover { color: #fff; background: #334155; }
+.sidebar nav a.active { color: var(--snow-blue); background: rgba(41,181,232,0.1); }
+.sidebar nav .section-title {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: #64748B;
+  padding: 12px 10px 4px;
+  font-weight: 600;
+}
+.sidebar nav ul ul { padding-left: 12px; }
+.sidebar nav ul ul a { font-size: 12px; padding: 4px 10px; }
+
+/* Main content */
+.main {
+  margin-left: var(--sidebar-width);
+  padding: 40px 60px;
+  max-width: 1100px;
+}
+h1 {
+  font-size: 32px;
+  color: var(--snow-dark);
+  margin-bottom: 8px;
+}
+.subtitle {
+  font-size: 14px;
+  color: #64748B;
+  margin-bottom: 32px;
+}
+h2 {
+  font-size: 22px;
+  color: var(--snow-dark);
+  margin-top: 48px;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--snow-blue);
+}
+h3 {
+  font-size: 17px;
+  color: #374151;
+  margin-top: 28px;
+  margin-bottom: 12px;
+}
+h4 {
+  font-size: 15px;
+  color: #1F2937;
+  margin-top: 20px;
+  margin-bottom: 8px;
+}
+p, li { font-size: 14px; margin-bottom: 8px; }
+ul, ol { padding-left: 20px; margin-bottom: 12px; }
+strong { color: #111827; }
+
+/* Score card */
+.score-card {
+  display: flex;
+  gap: 16px;
+  margin: 20px 0;
+  flex-wrap: wrap;
+}
+.score-item {
+  background: var(--snow-light);
+  border-radius: 8px;
+  padding: 16px 20px;
+  text-align: center;
+  min-width: 140px;
+}
+.score-item .number {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--snow-dark);
+}
+.score-item .label {
+  font-size: 11px;
+  text-transform: uppercase;
+  color: #64748B;
+  margin-top: 4px;
+}
+.score-item.ready .number { color: var(--ready-green); }
+.score-item.near .number { color: var(--near-amber); }
+.score-item.gap .number { color: var(--gap-red); }
+
+/* Tables */
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0 20px;
+  font-size: 13px;
+}
+th {
+  background: var(--snow-light);
+  color: var(--snow-dark);
+  font-weight: 600;
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 2px solid #E5E7EB;
+}
+td {
+  padding: 8px 12px;
+  border-bottom: 1px solid #F3F4F6;
+  vertical-align: top;
+}
+tr:hover td { background: #F9FAFB; }
+
+/* Classification badges */
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+.badge-ready { background: #D1FAE5; color: #065F46; }
+.badge-near { background: #FEF3C7; color: #92400E; }
+.badge-gap { background: #FEE2E2; color: #991B1B; }
+.badge-na { background: #F3F4F6; color: #6B7280; }
+
+/* Use case cards */
+.uc-card {
+  background: #F9FAFB;
+  border: 1px solid #E5E7EB;
+  border-radius: 8px;
+  padding: 20px 24px;
+  margin: 16px 0;
+  border-left: 4px solid var(--ready-green);
+}
+.uc-card.near { border-left-color: var(--near-amber); }
+.uc-card h4 { margin-top: 0; font-size: 16px; }
+.uc-card .meta { font-size: 12px; color: #6B7280; margin-bottom: 12px; }
+
+/* Feature pills */
+.pill-list { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+.pill {
+  display: inline-block;
+  padding: 3px 10px;
+  background: rgba(41,181,232,0.1);
+  color: var(--snow-blue);
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+/* Roadmap phases */
+.phase-header {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+.phase-1 { background: #D1FAE5; color: #065F46; }
+.phase-2 { background: #DBEAFE; color: #1E40AF; }
+.phase-3 { background: #FEF3C7; color: #92400E; }
+
+/* Gap table highlights */
+.effort-low { color: var(--ready-green); font-weight: 600; }
+.effort-med { color: var(--near-amber); font-weight: 600; }
+.effort-high { color: var(--gap-red); font-weight: 600; }
+
+hr { border: none; border-top: 1px solid #E5E7EB; margin: 32px 0; }
+
+/* Print */
+@media print {
+  .sidebar { display: none; }
+  .main { margin-left: 0; padding: 20px; }
+}
+@media (max-width: 900px) {
+  .sidebar { width: 100%; height: auto; position: relative; }
+  .main { margin-left: 0; padding: 20px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ==================== SIDEBAR NAVIGATION ==================== -->
+<aside class="sidebar">
+  <div class="logo">
+    <svg viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" stroke="#29B5E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    <span><!-- {{entity_name}} --> Value Map</span>
+  </div>
+  <nav>
+    <ul>
+      <li><a href="#executive-summary">Executive Summary</a></li>
+      <li><div class="section-title">Assessment</div></li>
+      <li><a href="#strategic-goals">1. Strategic Goals</a></li>
+      <li>
+        <a href="#deployment">2. Deployment Assessment</a>
+        <ul>
+          <li><a href="#silver-inventory">2.1 Silver Inventory</a></li>
+          <li><a href="#gold-inventory">2.2 Gold Inventory</a></li>
+          <li><a href="#domains">2.3 Domain Coverage</a></li>
+        </ul>
+      </li>
+      <li><div class="section-title">Use Cases</div></li>
+      <li>
+        <a href="#fit-matrix">3. Fit Matrix</a>
+        <ul>
+          <li><a href="#ready">3.2 READY</a></li>
+          <li><a href="#near">3.3 NEAR</a></li>
+          <li><a href="#gap-cases">3.4 GAP</a></li>
+        </ul>
+      </li>
+      <li><div class="section-title">Analysis</div></li>
+      <li>
+        <a href="#gap-analysis">4. Gap Analysis</a>
+        <ul>
+          <li><a href="#data-gaps">4.1 Data Gaps</a></li>
+          <li><a href="#capability-gaps">4.2 Capability Gaps</a></li>
+          <li><a href="#architecture-gaps">4.3 Architecture Gaps</a></li>
+        </ul>
+      </li>
+      <li><a href="#value-proposition">5. Value Proposition</a></li>
+      <li><a href="#impact">6. Business Impact</a></li>
+      <li><a href="#roadmap">7. Roadmap</a></li>
+      <li><div class="section-title">Appendix</div></li>
+      <li><a href="#feature-matrix">A. Feature Matrix</a></li>
+      <li><a href="#marketplace">B. Marketplace</a></li>
+      <li><a href="#inventory-deep-dive">C. Inventory Deep-Dive</a></li>
+      <li><a href="#methodology">D. Methodology</a></li>
+    </ul>
+  </nav>
+</aside>
+
+<!-- ==================== MAIN CONTENT ==================== -->
+<main class="main">
+
+<!-- HEADER -->
+<h1 id="top"><!-- {{entity_name}} --> &mdash; Snowflake Value Map Study</h1>
+<p class="subtitle">
+  <strong>Vertical:</strong> <!-- {{vertical}} --> &nbsp;|&nbsp;
+  <strong>Date:</strong> <!-- {{date}} --> &nbsp;|&nbsp;
+  <strong>Scope:</strong> <!-- {{silver_count}} --> silver, <!-- {{gold_count}} --> gold
+</p>
+
+<hr>
+
+<!-- ==================== EXECUTIVE SUMMARY ==================== -->
+<h2 id="executive-summary">Executive Summary</h2>
+
+<!-- {{executive_summary_paragraph}} -->
+<p>[2-3 sentence summary: overall fit, top opportunities, key recommendation]</p>
+
+<!-- SCORE CARD: One .score-item per metric -->
+<div class="score-card">
+  <div class="score-item"><div class="number"><!-- {{total_addressable}} --></div><div class="label">Use Cases Addressable</div></div>
+  <div class="score-item ready"><div class="number"><!-- {{ready_count}} --></div><div class="label">Ready (Deploy Now)</div></div>
+  <div class="score-item near"><div class="number"><!-- {{near_count}} --></div><div class="label">Near (Minor Gaps)</div></div>
+  <div class="score-item gap"><div class="number"><!-- {{gap_count}} --></div><div class="label">Significant Gaps</div></div>
+</div>
+
+<!-- SUMMARY TABLE -->
+<table>
+  <thead><tr><th>Category</th><th>Count</th><th>Priority Use Cases</th></tr></thead>
+  <tbody>
+    <tr><td><span class="badge badge-ready">READY</span></td><td><!-- {{ready_count}} --></td><td><!-- {{ready_list}} --></td></tr>
+    <tr><td><span class="badge badge-near">NEAR</span></td><td><!-- {{near_count}} --></td><td><!-- {{near_list}} --></td></tr>
+    <tr><td><span class="badge badge-gap">GAP</span></td><td><!-- {{gap_count}} --></td><td><!-- {{gap_list}} --></td></tr>
+    <tr><td><span class="badge badge-na">N/A</span></td><td><!-- {{na_count}} --></td><td><!-- {{na_list}} --></td></tr>
+  </tbody>
+</table>
+<!-- Repeat rows for each category -->
+
+<hr>
+
+<!-- ==================== 1. STRATEGIC GOALS ==================== -->
+<h2 id="strategic-goals">1. Entity Strategic Goals (Inferred)</h2>
+
+<table>
+  <thead><tr><th>#</th><th>Strategic Goal</th><th>Evidence from Deployment</th><th>Confidence</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><strong><!-- {{goal_name}} --></strong></td><td><!-- {{evidence}} --></td><td><!-- {{confidence}} --></td></tr>
+    <!-- Repeat for each strategic goal -->
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ==================== 2. DEPLOYMENT ASSESSMENT ==================== -->
+<h2 id="deployment">2. Current Deployment Assessment</h2>
+
+<h3 id="silver-inventory">2.1 Silver Layer Inventory</h3>
+<table>
+  <thead><tr><th>Object</th><th>Domain</th><th>Grain</th><th>Key Columns</th><th>Pattern</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><!-- {{table_name}} --></td><td><!-- {{domain}} --></td><td><!-- {{grain}} --></td><td><!-- {{key_cols}} --></td><td><!-- {{pattern}} --></td><td><!-- {{notes}} --></td></tr>
+    <!-- Repeat for each silver table -->
+  </tbody>
+</table>
+
+<h3 id="gold-inventory">2.2 Gold Layer Inventory</h3>
+<table>
+  <thead><tr><th>Object</th><th>Domain</th><th>Type</th><th>Grain</th><th>Key Columns</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><!-- {{table_name}} --></td><td><!-- {{domain}} --></td><td><!-- {{type}} --></td><td><!-- {{grain}} --></td><td><!-- {{key_cols}} --></td><td><!-- {{notes}} --></td></tr>
+    <!-- Repeat for each gold table -->
+  </tbody>
+</table>
+
+<h3 id="domains">2.3 Data Domain Coverage</h3>
+<table>
+  <thead><tr><th>Domain</th><th>Silver Objects</th><th>Gold Objects</th><th>Completeness</th><th>Gaps</th></tr></thead>
+  <tbody>
+    <tr><td><!-- {{domain}} --></td><td><!-- {{silver_ct}} --></td><td><!-- {{gold_ct}} --></td><td><!-- {{completeness}} --></td><td><!-- {{gaps}} --></td></tr>
+    <!-- Repeat for each domain -->
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ==================== 3. FIT MATRIX ==================== -->
+<h2 id="fit-matrix">3. Use Case Fit Matrix</h2>
+
+<h3>3.1 Summary Matrix</h3>
+<table>
+  <thead><tr><th>#</th><th>Use Case</th><th>Weight</th><th>Classification</th><th>Data Readiness</th><th>Effort</th><th>Impact</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><!-- {{use_case}} --></td><td><!-- {{weight}} --></td><td><span class="badge badge-ready">READY</span></td><td><!-- {{data_pct}} --></td><td><span class="effort-low">Low</span></td><td>High</td></tr>
+    <!-- Repeat for each use case -->
+  </tbody>
+</table>
+
+<!-- READY USE CASE CARD (example) -->
+<h3 id="ready">3.2 READY Use Cases (Deploy Now)</h3>
+
+<div class="uc-card">
+  <h4><!-- {{use_case_name}} --></h4>
+  <div class="meta">Classification: <span class="badge badge-ready">READY</span> &nbsp;|&nbsp; Impact: HIGH &nbsp;|&nbsp; Effort: <span class="effort-low">Low</span></div>
+  <ul>
+    <li><strong>Supporting Objects:</strong> <!-- {{supporting_tables}} --></li>
+    <li><strong>Why Ready:</strong> <!-- {{why_ready}} --></li>
+    <li><strong>Recommended Implementation:</strong> <!-- {{implementation}} --></li>
+    <li><strong>Expected Outcome:</strong> <!-- {{outcome}} --></li>
+  </ul>
+  <div class="pill-list">
+    <span class="pill"><!-- {{feature_1}} --></span>
+    <span class="pill"><!-- {{feature_2}} --></span>
+    <span class="pill"><!-- {{feature_3}} --></span>
+    <!-- Repeat pills for each Snowflake feature -->
+  </div>
+</div>
+<!-- Repeat for each READY use case -->
+
+<!-- NEAR USE CASE CARD (example) -->
+<h3 id="near">3.3 NEAR Use Cases (Minor Gaps)</h3>
+
+<div class="uc-card near">
+  <h4><!-- {{use_case_name}} --></h4>
+  <div class="meta">Classification: <span class="badge badge-near">NEAR</span> &nbsp;|&nbsp; Impact: HIGH &nbsp;|&nbsp; Effort: <span class="effort-med">Medium</span></div>
+  <ul>
+    <li><strong>Supporting Objects:</strong> <!-- {{supporting_tables}} --></li>
+    <li><strong>Gaps Identified:</strong>
+      <ul>
+        <li><!-- {{gap_description_1}} --></li>
+        <li><!-- {{gap_description_2}} --></li>
+        <!-- Repeat for each gap -->
+      </ul>
+    </li>
+    <li><strong>Effort to Close:</strong> <!-- {{effort}} --></li>
+    <li><strong>Expected Outcome:</strong> <!-- {{outcome}} --></li>
+  </ul>
+  <div class="pill-list">
+    <span class="pill"><!-- {{feature_1}} --></span>
+    <span class="pill"><!-- {{feature_2}} --></span>
+    <!-- Repeat pills -->
+  </div>
+</div>
+<!-- Repeat for each NEAR use case -->
+
+<!-- GAP USE CASE (brief) -->
+<h3 id="gap-cases">3.4 GAP Use Cases</h3>
+<!-- If no GAP use cases, display: <p>No significant gaps identified.</p> -->
+
+<hr>
+
+<!-- ==================== 4. GAP ANALYSIS ==================== -->
+<h2 id="gap-analysis">4. Gap Analysis</h2>
+
+<h3 id="data-gaps">4.1 Data Gaps</h3>
+<table>
+  <thead><tr><th>Gap ID</th><th>Description</th><th>Impact (Use Cases Blocked)</th><th>Resolution Path</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>DG-1</td><td><!-- {{gap_description}} --></td><td><!-- {{blocked_ucs}} --></td><td><!-- {{resolution}} --></td><td><span class="effort-low">Low</span></td></tr>
+    <!-- Repeat for each data gap -->
+  </tbody>
+</table>
+
+<h3 id="capability-gaps">4.2 Capability Gaps</h3>
+<table>
+  <thead><tr><th>Gap ID</th><th>Description</th><th>Impact</th><th>Snowflake Solution</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>CG-1</td><td><!-- {{gap_description}} --></td><td><!-- {{impact}} --></td><td><!-- {{solution}} --></td><td><span class="effort-med">Medium</span></td></tr>
+    <!-- Repeat for each capability gap -->
+  </tbody>
+</table>
+
+<h3 id="architecture-gaps">4.3 Architecture Gaps</h3>
+<table>
+  <thead><tr><th>Gap ID</th><th>Description</th><th>Impact</th><th>Resolution</th><th>Effort</th></tr></thead>
+  <tbody>
+    <tr><td>AG-1</td><td><!-- {{gap_description}} --></td><td><!-- {{impact}} --></td><td><!-- {{resolution}} --></td><td><span class="effort-high">High</span></td></tr>
+    <!-- Repeat for each architecture gap -->
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ==================== 5. VALUE PROPOSITION ==================== -->
+<h2 id="value-proposition">5. Snowflake Value Proposition</h2>
+
+<h3>5.1 Feature-to-Gap Mapping</h3>
+<table>
+  <thead><tr><th>Snowflake Feature</th><th>Gaps Addressed</th><th>Use Cases Enabled</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><!-- {{feature}} --></td><td><!-- {{gap_refs}} --></td><td><!-- {{uc_refs}} --></td><td><!-- {{notes}} --></td></tr>
+    <!-- Repeat for each feature -->
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ==================== 6. BUSINESS IMPACT ==================== -->
+<h2 id="impact">6. Business Impact Assessment</h2>
+
+<p><em>Impact estimates use published industry benchmarks. They are NOT calibrated to this entity's specific financials. Treat as directional indicators only.</em></p>
+
+<table>
+  <thead><tr><th>Use Case</th><th>Impact Category</th><th>Industry Benchmark Range</th><th>Timeline to Value</th></tr></thead>
+  <tbody>
+    <tr><td><!-- {{use_case}} --></td><td><!-- {{category}} --></td><td><!-- {{range}} --></td><td><!-- {{timeline}} --></td></tr>
+    <!-- Repeat for each use case -->
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ==================== 7. ROADMAP ==================== -->
+<h2 id="roadmap">7. Recommended Roadmap</h2>
+
+<!-- PHASE 1 -->
+<span class="phase-header phase-1">Phase 1: Quick Wins (READY)</span>
+<table>
+  <thead><tr><th>#</th><th>Use Case</th><th>Key Actions</th><th>Dependencies</th><th>Expected Impact</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><!-- {{use_case}} --></td><td><!-- {{actions}} --></td><td>None</td><td><!-- {{impact}} --></td></tr>
+    <!-- Repeat for each Phase 1 item -->
+  </tbody>
+</table>
+
+<!-- PHASE 2 -->
+<span class="phase-header phase-2">Phase 2: Near-Term (Close Gaps)</span>
+<table>
+  <thead><tr><th>#</th><th>Use Case</th><th>Gaps to Close</th><th>Key Actions</th><th>Expected Impact</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><!-- {{use_case}} --></td><td><!-- {{gap_refs}} --></td><td><!-- {{actions}} --></td><td><!-- {{impact}} --></td></tr>
+    <!-- Repeat for each Phase 2 item -->
+  </tbody>
+</table>
+
+<!-- PHASE 3 -->
+<span class="phase-header phase-3">Phase 3: Strategic (Build Capability)</span>
+<table>
+  <thead><tr><th>#</th><th>Use Case</th><th>Major Investments</th><th>Key Actions</th><th>Expected Impact</th></tr></thead>
+  <tbody>
+    <tr><td>1</td><td><!-- {{use_case}} --></td><td><!-- {{investments}} --></td><td><!-- {{actions}} --></td><td><!-- {{impact}} --></td></tr>
+    <!-- Repeat for each Phase 3 item -->
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ==================== APPENDIX ==================== -->
+<h2 id="feature-matrix">Appendix A: Snowflake Feature Matrix</h2>
+<table>
+  <thead><tr><th>Feature</th><th>Currently Used</th><th>Recommended For</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td><!-- {{feature}} --></td><td><!-- {{used_flag}} --></td><td><!-- {{recommended_for}} --></td><td><!-- {{notes}} --></td></tr>
+    <!-- Repeat for each feature -->
+  </tbody>
+</table>
+
+<h2 id="marketplace">Appendix B: Marketplace Opportunities</h2>
+<table>
+  <thead><tr><th>Data Product</th><th>Provider</th><th>Use Cases Enabled</th><th>Cost Tier</th></tr></thead>
+  <tbody>
+    <tr><td><!-- {{product}} --></td><td><!-- {{provider}} --></td><td><!-- {{ucs}} --></td><td><!-- {{cost}} --></td></tr>
+    <!-- Repeat for each marketplace opportunity -->
+  </tbody>
+</table>
+
+<h2 id="inventory-deep-dive">Appendix C: Full Inventory Deep-Dive</h2>
+<!-- {{full_inventory_tables}} -->
+<p>[Complete table listing with all columns]</p>
+
+<h2 id="methodology">Appendix D: Methodology</h2>
+<ul>
+  <li><strong>Vertical Detection:</strong> <!-- {{vertical_method}} --></li>
+  <li><strong>Classification Criteria:</strong> <!-- {{classification_criteria}} --></li>
+  <li><strong>Impact Estimation Basis:</strong> <!-- {{impact_basis}} --></li>
+  <li><strong>Limitations:</strong> <!-- {{limitations}} --></li>
+</ul>
+
+<hr>
+<p style="text-align: center; font-size: 12px; color: #9CA3AF; margin-top: 40px;">
+  Generated by Snowflake Value Map skill | Cortex Code
+</p>
+
+</main>
+
+<script>
+// Highlight active TOC item on scroll
+const sections = document.querySelectorAll('h2[id], h3[id]');
+const navLinks = document.querySelectorAll('.sidebar nav a');
+
+function updateActive() {
+  let current = '';
+  sections.forEach(section => {
+    const top = section.getBoundingClientRect().top;
+    if (top < 120) current = section.getAttribute('id');
+  });
+  navLinks.forEach(link => {
+    link.classList.remove('active');
+    if (link.getAttribute('href') === '#' + current) {
+      link.classList.add('active');
+    }
+  });
+}
+
+window.addEventListener('scroll', updateActive);
+document.addEventListener('DOMContentLoaded', updateActive);
+
+// Smooth scroll
+navLinks.forEach(link => {
+  link.addEventListener('click', e => {
+    e.preventDefault();
+    const target = document.querySelector(link.getAttribute('href'));
+    if (target) target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,420 @@
+-- ============================================================================
+-- MANUFACTURING VERTICAL - Sample DDL
+-- Source Systems: SAP PP/PM, Siemens Opcenter MES, OSIsoft PI, Custom IoT Platform, SAP QM
+-- Entity: Apex Manufacturing Corp
+-- ============================================================================
+
+CREATE DATABASE IF NOT EXISTS APEX_MFG;
+
+-- ============================================================================
+-- SILVER LAYER - Cleaned & conformed from source systems
+-- ============================================================================
+CREATE SCHEMA IF NOT EXISTS APEX_MFG.SILVER;
+
+-- Source: SAP PM (Plant Maintenance)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_EQUIPMENT_MASTER (
+    EQUIPMENT_ID        VARCHAR(40) NOT NULL,
+    EQUIPMENT_DESC      VARCHAR(200),
+    EQUIPMENT_CATEGORY  VARCHAR(20),       -- M (Machine), T (Tool), P (Production)
+    PLANT_CODE          VARCHAR(10),
+    COST_CENTER         VARCHAR(20),
+    MANUFACTURER        VARCHAR(100),
+    MODEL_NUMBER        VARCHAR(50),
+    SERIAL_NUMBER       VARCHAR(50),
+    INSTALLATION_DATE   DATE,
+    WARRANTY_END_DATE   DATE,
+    CRITICALITY_CLASS   VARCHAR(5),        -- A, B, C
+    STATUS              VARCHAR(20),
+    VALID_FROM          TIMESTAMP_NTZ NOT NULL,
+    VALID_TO            TIMESTAMP_NTZ,
+    IS_CURRENT          BOOLEAN DEFAULT TRUE,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP PM Equipment Master - SCD2. Source: SAP ECC EQUI/EQUZ tables';
+
+-- Source: SAP PM (Maintenance Orders)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_MAINTENANCE_ORDER (
+    ORDER_NUMBER        VARCHAR(20) NOT NULL,
+    ORDER_TYPE          VARCHAR(10),       -- PM01 (corrective), PM02 (preventive), PM03 (condition-based)
+    EQUIPMENT_ID        VARCHAR(40),
+    FUNCTIONAL_LOCATION VARCHAR(40),
+    PRIORITY            VARCHAR(5),
+    PLANNED_START       TIMESTAMP_NTZ,
+    PLANNED_END         TIMESTAMP_NTZ,
+    ACTUAL_START        TIMESTAMP_NTZ,
+    ACTUAL_END          TIMESTAMP_NTZ,
+    BREAKDOWN_FLAG      BOOLEAN,
+    FAILURE_CODE        VARCHAR(20),
+    FAILURE_DESC        VARCHAR(500),
+    COST_ESTIMATE       NUMBER(15,2),
+    ACTUAL_COST         NUMBER(15,2),
+    CREATED_BY          VARCHAR(50),
+    STATUS              VARCHAR(20),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP PM Maintenance Orders. Source: SAP AUFK/AFIH tables';
+
+-- Source: SAP PP (Production Planning)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_PRODUCTION_ORDER (
+    ORDER_NUMBER        VARCHAR(20) NOT NULL,
+    MATERIAL_NUMBER     VARCHAR(40),
+    PLANT_CODE          VARCHAR(10),
+    WORK_CENTER         VARCHAR(20),
+    ORDER_QUANTITY      NUMBER(15,3),
+    CONFIRMED_QUANTITY  NUMBER(15,3),
+    SCRAP_QUANTITY      NUMBER(15,3),
+    UOM                 VARCHAR(5),
+    SCHEDULED_START     TIMESTAMP_NTZ,
+    SCHEDULED_END       TIMESTAMP_NTZ,
+    ACTUAL_START        TIMESTAMP_NTZ,
+    ACTUAL_END          TIMESTAMP_NTZ,
+    STATUS              VARCHAR(20),
+    ROUTING_NUMBER      VARCHAR(20),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP PP Production Orders. Source: SAP AUFK/AFPO tables';
+
+-- Source: SAP PP (BOM)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_BOM (
+    BOM_NUMBER          VARCHAR(20) NOT NULL,
+    BOM_ITEM            NUMBER(5) NOT NULL,
+    PARENT_MATERIAL     VARCHAR(40),
+    COMPONENT_MATERIAL  VARCHAR(40),
+    QUANTITY_PER        NUMBER(15,5),
+    UOM                 VARCHAR(5),
+    VALID_FROM          DATE,
+    VALID_TO            DATE,
+    CHANGE_NUMBER       VARCHAR(20),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP PP Bill of Materials. Source: SAP STKO/STPO tables';
+
+-- Source: SAP MM (Material Master)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_MATERIAL_MASTER (
+    MATERIAL_NUMBER     VARCHAR(40) NOT NULL,
+    MATERIAL_DESC       VARCHAR(200),
+    MATERIAL_TYPE       VARCHAR(10),
+    MATERIAL_GROUP      VARCHAR(20),
+    BASE_UOM            VARCHAR(5),
+    WEIGHT_NET          NUMBER(15,3),
+    WEIGHT_UNIT         VARCHAR(5),
+    SUPPLIER_ID         VARCHAR(20),
+    LEAD_TIME_DAYS      NUMBER(5),
+    SAFETY_STOCK        NUMBER(15,3),
+    REORDER_POINT       NUMBER(15,3),
+    VALID_FROM          TIMESTAMP_NTZ NOT NULL,
+    VALID_TO            TIMESTAMP_NTZ,
+    IS_CURRENT          BOOLEAN DEFAULT TRUE,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP MM Material Master - SCD2. Source: SAP MARA/MARC tables';
+
+-- Source: SAP QM (Quality Management)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_INSPECTION_LOT (
+    INSPECTION_LOT      VARCHAR(20) NOT NULL,
+    MATERIAL_NUMBER     VARCHAR(40),
+    BATCH_NUMBER        VARCHAR(20),
+    PLANT_CODE          VARCHAR(10),
+    INSPECTION_TYPE     VARCHAR(10),
+    LOT_SIZE            NUMBER(15,3),
+    SAMPLE_SIZE         NUMBER(15,3),
+    RESULT_CODE         VARCHAR(10),       -- A (accepted), R (rejected)
+    DEFECT_COUNT        NUMBER(10),
+    INSPECTION_START    TIMESTAMP_NTZ,
+    INSPECTION_END      TIMESTAMP_NTZ,
+    INSPECTOR_ID        VARCHAR(50),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP QM Inspection Lots. Source: SAP QALS table';
+
+-- Source: SAP QM (Defect Records)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_DEFECT_RECORD (
+    DEFECT_ID           VARCHAR(20) NOT NULL,
+    INSPECTION_LOT      VARCHAR(20),
+    DEFECT_CODE         VARCHAR(20),
+    DEFECT_CLASS        VARCHAR(10),       -- CR (critical), MA (major), MI (minor)
+    DEFECT_LOCATION     VARCHAR(50),
+    DEFECT_QUANTITY     NUMBER(10),
+    CAUSE_CODE          VARCHAR(20),
+    EQUIPMENT_ID        VARCHAR(40),
+    OPERATOR_ID         VARCHAR(50),
+    SHIFT_CODE          VARCHAR(10),
+    DETECTED_AT         TIMESTAMP_NTZ,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP QM Defect/Notification records. Source: SAP QMFE table';
+
+-- Source: Siemens Opcenter MES
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.MES_PRODUCTION_EVENT (
+    EVENT_ID            VARCHAR(50) NOT NULL,
+    MACHINE_ID          VARCHAR(40),
+    WORK_ORDER_ID       VARCHAR(20),
+    EVENT_TYPE          VARCHAR(30),       -- RUN_START, RUN_END, STOP, SPEED_LOSS, CHANGEOVER
+    EVENT_TIMESTAMP     TIMESTAMP_NTZ NOT NULL,
+    DURATION_SECONDS    NUMBER(10),
+    REASON_CODE         VARCHAR(20),
+    OPERATOR_ID         VARCHAR(50),
+    PRODUCT_CODE        VARCHAR(40),
+    UNITS_PRODUCED      NUMBER(10),
+    UNITS_REJECTED      NUMBER(10),
+    CYCLE_TIME_ACTUAL   NUMBER(10,2),
+    CYCLE_TIME_IDEAL    NUMBER(10,2),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Siemens Opcenter MES production events. Real-time machine state transitions.';
+
+-- Source: Siemens Opcenter MES (Process Parameters)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.MES_PROCESS_PARAMETER (
+    PARAMETER_ID        VARCHAR(50) NOT NULL,
+    MACHINE_ID          VARCHAR(40),
+    WORK_ORDER_ID       VARCHAR(20),
+    PARAMETER_NAME      VARCHAR(100),      -- TEMP_ZONE_1, PRESSURE_MAIN, SPEED_RPM, TORQUE
+    PARAMETER_VALUE     NUMBER(15,4),
+    PARAMETER_UOM       VARCHAR(20),
+    UPPER_SPEC_LIMIT    NUMBER(15,4),
+    LOWER_SPEC_LIMIT    NUMBER(15,4),
+    TIMESTAMP           TIMESTAMP_NTZ NOT NULL,
+    OUT_OF_SPEC_FLAG    BOOLEAN,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Siemens Opcenter MES process parameters. Critical for SPC and quality correlation.';
+
+-- Source: OSIsoft PI Historian (via Snowpipe Streaming)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.PI_SENSOR_READING (
+    TAG_NAME            VARCHAR(100) NOT NULL,
+    EQUIPMENT_ID        VARCHAR(40),
+    READING_TIMESTAMP   TIMESTAMP_NTZ NOT NULL,
+    VALUE               FLOAT,
+    QUALITY_CODE        NUMBER(5),
+    UOM                 VARCHAR(20),
+    SENSOR_TYPE         VARCHAR(30),       -- VIBRATION, TEMPERATURE, PRESSURE, CURRENT, FLOW
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'OSIsoft PI Historian sensor readings. High-frequency time-series. Ingested via Snowpipe Streaming.';
+
+-- Source: Custom IoT Platform
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.IOT_DEVICE_TELEMETRY (
+    DEVICE_ID           VARCHAR(50) NOT NULL,
+    EQUIPMENT_ID        VARCHAR(40),
+    TELEMETRY_TIMESTAMP TIMESTAMP_NTZ NOT NULL,
+    PAYLOAD             VARIANT,           -- Raw JSON: {temp, humidity, vibration_x/y/z, power_kw, status}
+    DEVICE_TYPE         VARCHAR(30),
+    FIRMWARE_VERSION    VARCHAR(20),
+    SIGNAL_STRENGTH     NUMBER(5),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Custom IoT platform device telemetry. Semi-structured VARIANT payloads.';
+
+-- Source: SAP PP (Shift Schedule)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_SHIFT_SCHEDULE (
+    PLANT_CODE          VARCHAR(10) NOT NULL,
+    WORK_CENTER         VARCHAR(20) NOT NULL,
+    SHIFT_DATE          DATE NOT NULL,
+    SHIFT_CODE          VARCHAR(10) NOT NULL,
+    SHIFT_START         TIMESTAMP_NTZ,
+    SHIFT_END           TIMESTAMP_NTZ,
+    PLANNED_HEADCOUNT   NUMBER(5),
+    ACTUAL_HEADCOUNT    NUMBER(5),
+    SUPERVISOR_ID       VARCHAR(50),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP PP Shift schedules. Source: SAP KAPA/TC tables';
+
+-- Source: SAP MM (Purchase Orders / Supplier)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_PURCHASE_ORDER (
+    PO_NUMBER           VARCHAR(20) NOT NULL,
+    PO_ITEM             NUMBER(5) NOT NULL,
+    SUPPLIER_ID         VARCHAR(20),
+    MATERIAL_NUMBER     VARCHAR(40),
+    QUANTITY_ORDERED    NUMBER(15,3),
+    QUANTITY_RECEIVED   NUMBER(15,3),
+    UOM                 VARCHAR(5),
+    NET_PRICE           NUMBER(15,2),
+    CURRENCY            VARCHAR(5),
+    DELIVERY_DATE_PLAN  DATE,
+    DELIVERY_DATE_ACTUAL DATE,
+    PLANT_CODE          VARCHAR(10),
+    STATUS              VARCHAR(20),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP MM Purchase Orders. Source: SAP EKKO/EKPO tables';
+
+-- Source: SAP MM (Inventory)
+CREATE OR REPLACE TABLE APEX_MFG.SILVER.SAP_INVENTORY_SNAPSHOT (
+    SNAPSHOT_DATE       DATE NOT NULL,
+    PLANT_CODE          VARCHAR(10) NOT NULL,
+    STORAGE_LOCATION    VARCHAR(10) NOT NULL,
+    MATERIAL_NUMBER     VARCHAR(40) NOT NULL,
+    BATCH_NUMBER        VARCHAR(20),
+    STOCK_TYPE          VARCHAR(10),       -- UNRESTRICTED, BLOCKED, QUALITY_INSPECTION
+    QUANTITY_ON_HAND    NUMBER(15,3),
+    UOM                 VARCHAR(5),
+    VALUATION_AMOUNT    NUMBER(15,2),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'SAP MM Daily inventory snapshots. Source: SAP MARD/MCHB tables';
+
+-- ============================================================================
+-- GOLD LAYER - Business-ready dimensional model
+-- ============================================================================
+CREATE SCHEMA IF NOT EXISTS APEX_MFG.GOLD;
+
+-- Dimensions
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.DIM_EQUIPMENT (
+    EQUIPMENT_KEY       NUMBER AUTOINCREMENT,
+    EQUIPMENT_ID        VARCHAR(40) NOT NULL,
+    EQUIPMENT_DESC      VARCHAR(200),
+    EQUIPMENT_CATEGORY  VARCHAR(20),
+    PLANT_CODE          VARCHAR(10),
+    PLANT_NAME          VARCHAR(100),
+    COST_CENTER         VARCHAR(20),
+    MANUFACTURER        VARCHAR(100),
+    MODEL_NUMBER        VARCHAR(50),
+    CRITICALITY_CLASS   VARCHAR(5),
+    STATUS              VARCHAR(20),
+    INSTALLATION_DATE   DATE,
+    AGE_YEARS           NUMBER(5,1),
+    _VALID_FROM         TIMESTAMP_NTZ,
+    _VALID_TO           TIMESTAMP_NTZ,
+    _IS_CURRENT         BOOLEAN
+) COMMENT = 'Equipment dimension - SCD2. Conformed from SAP PM.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.DIM_MATERIAL (
+    MATERIAL_KEY        NUMBER AUTOINCREMENT,
+    MATERIAL_NUMBER     VARCHAR(40) NOT NULL,
+    MATERIAL_DESC       VARCHAR(200),
+    MATERIAL_TYPE       VARCHAR(10),
+    MATERIAL_GROUP      VARCHAR(20),
+    MATERIAL_GROUP_DESC VARCHAR(100),
+    SUPPLIER_ID         VARCHAR(20),
+    SUPPLIER_NAME       VARCHAR(200),
+    LEAD_TIME_DAYS      NUMBER(5),
+    _IS_CURRENT         BOOLEAN
+) COMMENT = 'Material dimension. Conformed from SAP MM.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.DIM_SUPPLIER (
+    SUPPLIER_KEY        NUMBER AUTOINCREMENT,
+    SUPPLIER_ID         VARCHAR(20) NOT NULL,
+    SUPPLIER_NAME       VARCHAR(200),
+    COUNTRY             VARCHAR(50),
+    REGION              VARCHAR(50),
+    SUPPLIER_TIER       VARCHAR(10),
+    CERTIFICATION_STATUS VARCHAR(20),
+    _IS_CURRENT         BOOLEAN
+) COMMENT = 'Supplier dimension. Conformed from SAP MM vendor master.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.DIM_DATE (
+    DATE_KEY            NUMBER NOT NULL,
+    FULL_DATE           DATE NOT NULL,
+    YEAR                NUMBER(4),
+    QUARTER             NUMBER(1),
+    MONTH               NUMBER(2),
+    WEEK                NUMBER(2),
+    DAY_OF_WEEK         NUMBER(1),
+    FISCAL_YEAR         NUMBER(4),
+    FISCAL_PERIOD       NUMBER(2),
+    IS_WORKING_DAY      BOOLEAN
+) COMMENT = 'Standard date dimension.';
+
+-- Facts
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.FACT_PRODUCTION (
+    PRODUCTION_KEY      NUMBER AUTOINCREMENT,
+    ORDER_NUMBER        VARCHAR(20),
+    EQUIPMENT_KEY       NUMBER,
+    MATERIAL_KEY        NUMBER,
+    DATE_KEY            NUMBER,
+    SHIFT_CODE          VARCHAR(10),
+    PLANNED_QTY         NUMBER(15,3),
+    PRODUCED_QTY        NUMBER(15,3),
+    SCRAP_QTY           NUMBER(15,3),
+    REWORK_QTY          NUMBER(15,3),
+    RUNTIME_MINUTES     NUMBER(10),
+    DOWNTIME_MINUTES    NUMBER(10),
+    CHANGEOVER_MINUTES  NUMBER(10),
+    CYCLE_TIME_ACTUAL   NUMBER(10,2),
+    CYCLE_TIME_IDEAL    NUMBER(10,2),
+    FIRST_PASS_YIELD    NUMBER(5,4),
+    OEE_AVAILABILITY    NUMBER(5,4),
+    OEE_PERFORMANCE     NUMBER(5,4),
+    OEE_QUALITY         NUMBER(5,4),
+    OEE_OVERALL         NUMBER(5,4)
+) COMMENT = 'Production fact at order/shift grain. OEE decomposition included.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.FACT_MAINTENANCE (
+    MAINTENANCE_KEY     NUMBER AUTOINCREMENT,
+    ORDER_NUMBER        VARCHAR(20),
+    EQUIPMENT_KEY       NUMBER,
+    DATE_KEY            NUMBER,
+    ORDER_TYPE          VARCHAR(10),
+    IS_BREAKDOWN        BOOLEAN,
+    FAILURE_CODE        VARCHAR(20),
+    FAILURE_CATEGORY    VARCHAR(50),
+    TIME_TO_REPAIR_HRS  NUMBER(10,2),
+    TIME_BETWEEN_FAIL   NUMBER(10,2),
+    PLANNED_COST        NUMBER(15,2),
+    ACTUAL_COST         NUMBER(15,2),
+    SPARE_PARTS_COST    NUMBER(15,2),
+    LABOR_COST          NUMBER(15,2)
+) COMMENT = 'Maintenance fact. Links to equipment dimension for asset health analytics.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.FACT_QUALITY (
+    QUALITY_KEY         NUMBER AUTOINCREMENT,
+    INSPECTION_LOT      VARCHAR(20),
+    EQUIPMENT_KEY       NUMBER,
+    MATERIAL_KEY        NUMBER,
+    DATE_KEY            NUMBER,
+    BATCH_NUMBER        VARCHAR(20),
+    LOT_SIZE            NUMBER(15,3),
+    SAMPLE_SIZE         NUMBER(15,3),
+    DEFECT_COUNT        NUMBER(10),
+    DEFECT_CLASS        VARCHAR(10),
+    RESULT_CODE         VARCHAR(10),
+    YIELD_RATE          NUMBER(5,4),
+    SIGMA_LEVEL         NUMBER(5,2),
+    CPK_VALUE           NUMBER(5,3)
+) COMMENT = 'Quality inspection fact. Supports SPC and defect analysis.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.FACT_SENSOR_DAILY (
+    EQUIPMENT_KEY       NUMBER,
+    SENSOR_TYPE         VARCHAR(30),
+    DATE_KEY            NUMBER,
+    READING_COUNT       NUMBER(10),
+    VALUE_MIN           FLOAT,
+    VALUE_MAX           FLOAT,
+    VALUE_AVG           FLOAT,
+    VALUE_STDDEV        FLOAT,
+    VALUE_P95           FLOAT,
+    ANOMALY_COUNT       NUMBER(10),
+    OUT_OF_SPEC_COUNT   NUMBER(10)
+) COMMENT = 'Daily sensor aggregation. Pre-computed from PI historian for trending.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.FACT_SUPPLY_CHAIN (
+    PO_KEY              NUMBER AUTOINCREMENT,
+    SUPPLIER_KEY        NUMBER,
+    MATERIAL_KEY        NUMBER,
+    DATE_KEY            NUMBER,
+    QUANTITY_ORDERED    NUMBER(15,3),
+    QUANTITY_RECEIVED   NUMBER(15,3),
+    ON_TIME_FLAG        BOOLEAN,
+    DAYS_EARLY_LATE     NUMBER(5),
+    UNIT_COST           NUMBER(15,4),
+    TOTAL_COST          NUMBER(15,2),
+    QUALITY_PASS_FLAG   BOOLEAN
+) COMMENT = 'Supply chain fact. Supplier delivery and quality performance.';
+
+-- Aggregates
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.AGG_OEE_DAILY (
+    EQUIPMENT_KEY       NUMBER,
+    DATE_KEY            NUMBER,
+    PLANNED_PRODUCTION_TIME_MIN NUMBER(10),
+    ACTUAL_RUN_TIME_MIN NUMBER(10),
+    TOTAL_UNITS         NUMBER(10),
+    GOOD_UNITS          NUMBER(10),
+    IDEAL_CYCLE_TIME    NUMBER(10,2),
+    AVAILABILITY        NUMBER(5,4),
+    PERFORMANCE         NUMBER(5,4),
+    QUALITY_RATE        NUMBER(5,4),
+    OEE                 NUMBER(5,4),
+    DOWNTIME_LOSSES_MIN NUMBER(10),
+    SPEED_LOSSES_MIN    NUMBER(10),
+    QUALITY_LOSSES_UNITS NUMBER(10),
+    TOP_LOSS_CATEGORY   VARCHAR(50)
+) COMMENT = 'Daily OEE aggregate by equipment. Pre-computed for dashboards.';
+
+CREATE OR REPLACE TABLE APEX_MFG.GOLD.AGG_SUPPLIER_SCORECARD (
+    SUPPLIER_KEY        NUMBER,
+    MONTH_KEY           NUMBER,
+    TOTAL_PO_LINES      NUMBER(10),
+    ON_TIME_DELIVERY_PCT NUMBER(5,4),
+    QUALITY_ACCEPT_PCT  NUMBER(5,4),
+    AVG_LEAD_TIME_DAYS  NUMBER(5,1),
+    COST_VARIANCE_PCT   NUMBER(5,4),
+    COMPOSITE_SCORE     NUMBER(5,2)
+) COMMENT = 'Monthly supplier scorecard. Delivery + quality + cost composite.';
+

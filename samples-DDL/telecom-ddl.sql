@@ -1,0 +1,450 @@
+-- ============================================================================
+-- TELECOM VERTICAL - Sample DDL
+-- Source Systems: Amdocs BSS (Billing/CRM), Nokia NSP (Network), Genesys Cloud (Contact Center),
+--                 HubSpot (Marketing), Custom CDR Pipeline, Custom IoT Platform
+-- Entity: Horizon Telecom Inc
+-- ============================================================================
+
+CREATE DATABASE IF NOT EXISTS HORIZON_TELCO;
+
+-- ============================================================================
+-- SILVER LAYER - Cleaned & conformed from source systems
+-- ============================================================================
+CREATE SCHEMA IF NOT EXISTS HORIZON_TELCO.SILVER;
+
+-- Source: Amdocs BSS (Subscriber Management)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.AMDOCS_SUBSCRIBER (
+    SUBSCRIBER_ID       VARCHAR(20) NOT NULL,
+    ACCOUNT_ID          VARCHAR(20),
+    MSISDN              VARCHAR(20),
+    IMSI                VARCHAR(20),
+    SIM_ICCID           VARCHAR(25),
+    FIRST_NAME          VARCHAR(100),
+    LAST_NAME           VARCHAR(100),
+    DATE_OF_BIRTH       DATE,
+    ADDRESS_LINE_1      VARCHAR(200),
+    CITY                VARCHAR(100),
+    STATE               VARCHAR(5),
+    ZIP_CODE            VARCHAR(10),
+    SUBSCRIBER_TYPE     VARCHAR(20),       -- POSTPAID, PREPAID, HYBRID
+    SEGMENT             VARCHAR(30),       -- CONSUMER, SMB, ENTERPRISE
+    ACTIVATION_DATE     DATE,
+    CONTRACT_END_DATE   DATE,
+    STATUS              VARCHAR(20),       -- ACTIVE, SUSPENDED, DISCONNECTED, PORTED_OUT
+    CREDIT_CLASS        VARCHAR(10),
+    LANGUAGE_PREF       VARCHAR(10),
+    VALID_FROM          TIMESTAMP_NTZ NOT NULL,
+    VALID_TO            TIMESTAMP_NTZ,
+    IS_CURRENT          BOOLEAN DEFAULT TRUE,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Amdocs BSS Subscriber master - SCD2. Source: Amdocs CES subscriber tables.';
+
+-- Source: Amdocs BSS (Plans & Products)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.AMDOCS_SUBSCRIPTION (
+    SUBSCRIPTION_ID     VARCHAR(20) NOT NULL,
+    SUBSCRIBER_ID       VARCHAR(20),
+    PLAN_CODE           VARCHAR(20),
+    PLAN_NAME           VARCHAR(100),
+    PLAN_TYPE           VARCHAR(20),       -- VOICE, DATA, BUNDLE, ADD_ON, DEVICE_PAYMENT
+    MONTHLY_RECURRING   NUMBER(10,2),
+    DATA_ALLOWANCE_GB   NUMBER(10,2),
+    VOICE_ALLOWANCE_MIN NUMBER(10),
+    SMS_ALLOWANCE       NUMBER(10),
+    SPEED_TIER          VARCHAR(20),       -- 5G_UNLIMITED, 5G_PREMIUM, 4G_BASIC
+    START_DATE          DATE,
+    END_DATE            DATE,
+    STATUS              VARCHAR(20),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Amdocs BSS active subscriptions/plans. Source: Amdocs product catalog.';
+
+-- Source: Amdocs BSS (Billing)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.AMDOCS_BILLING (
+    BILL_ID             VARCHAR(20) NOT NULL,
+    ACCOUNT_ID          VARCHAR(20),
+    SUBSCRIBER_ID       VARCHAR(20),
+    BILL_CYCLE          DATE,
+    BILL_DATE           DATE,
+    DUE_DATE            DATE,
+    RECURRING_CHARGES   NUMBER(12,2),
+    USAGE_CHARGES       NUMBER(12,2),
+    ONE_TIME_CHARGES    NUMBER(12,2),
+    TAXES               NUMBER(12,2),
+    TOTAL_AMOUNT        NUMBER(12,2),
+    PAYMENT_STATUS      VARCHAR(20),       -- PAID, PARTIAL, OVERDUE, WRITTEN_OFF
+    PAYMENT_DATE        DATE,
+    PAYMENT_METHOD      VARCHAR(20),
+    DAYS_PAST_DUE       NUMBER(5),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Amdocs BSS billing records. Monthly invoice data.';
+
+-- Source: Custom CDR Pipeline
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.CDR_VOICE (
+    CDR_ID              VARCHAR(50) NOT NULL,
+    CALLING_MSISDN      VARCHAR(20),
+    CALLED_MSISDN       VARCHAR(20),
+    CALL_START          TIMESTAMP_NTZ NOT NULL,
+    CALL_END            TIMESTAMP_NTZ,
+    DURATION_SECONDS    NUMBER(10),
+    CALL_TYPE           VARCHAR(10),       -- LOCAL, NATIONAL, INTERNATIONAL, ROAMING
+    ORIGINATING_CELL    VARCHAR(20),
+    TERMINATING_CELL    VARCHAR(20),
+    NETWORK_TYPE        VARCHAR(10),       -- 4G, 5G, VOLTE, WIFI
+    CALL_DISPOSITION    VARCHAR(10),       -- ANSWERED, MISSED, BUSY, FAILED
+    RATED_AMOUNT        NUMBER(10,4),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Voice CDRs from mediation platform. High-volume call records.';
+
+-- Source: Custom CDR Pipeline
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.CDR_DATA_SESSION (
+    SESSION_ID          VARCHAR(50) NOT NULL,
+    MSISDN              VARCHAR(20),
+    IMSI                VARCHAR(20),
+    SESSION_START       TIMESTAMP_NTZ NOT NULL,
+    SESSION_END         TIMESTAMP_NTZ,
+    BYTES_UPLOADED      NUMBER(15),
+    BYTES_DOWNLOADED    NUMBER(15),
+    TOTAL_BYTES         NUMBER(15),
+    CELL_ID             VARCHAR(20),
+    RAT_TYPE            VARCHAR(10),       -- 4G, 5G_NSA, 5G_SA, WIFI
+    APN                 VARCHAR(50),
+    QOS_CLASS           VARCHAR(10),
+    LATENCY_MS          NUMBER(10,2),
+    THROUGHPUT_MBPS     NUMBER(10,2),
+    RATED_AMOUNT        NUMBER(10,4),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Data session CDRs. Bandwidth, latency, and throughput per session.';
+
+-- Source: Nokia NSP (Network Performance)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.NOKIA_CELL_PERFORMANCE (
+    CELL_ID             VARCHAR(20) NOT NULL,
+    SITE_ID             VARCHAR(20),
+    MEASUREMENT_TIME    TIMESTAMP_NTZ NOT NULL,
+    GRANULARITY_MIN     NUMBER(3),         -- 15 or 60
+    TECHNOLOGY          VARCHAR(10),       -- 4G, 5G
+    BAND                VARCHAR(10),
+    PRB_UTILIZATION_DL  NUMBER(5,2),
+    PRB_UTILIZATION_UL  NUMBER(5,2),
+    ACTIVE_USERS        NUMBER(5),
+    THROUGHPUT_DL_MBPS  NUMBER(10,2),
+    THROUGHPUT_UL_MBPS  NUMBER(10,2),
+    LATENCY_AVG_MS      NUMBER(10,2),
+    PACKET_LOSS_PCT     NUMBER(5,4),
+    HANDOVER_SUCCESS_PCT NUMBER(7,4),
+    CALL_DROP_RATE      NUMBER(5,4),
+    VOLTE_MOS           NUMBER(3,1),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Nokia NSP cell-level performance counters. 15-min/hourly granularity.';
+
+-- Source: Nokia NSP (Alarms/Faults)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.NOKIA_NETWORK_ALARM (
+    ALARM_ID            VARCHAR(30) NOT NULL,
+    SITE_ID             VARCHAR(20),
+    NODE_ID             VARCHAR(30),
+    CELL_ID             VARCHAR(20),
+    ALARM_TIME          TIMESTAMP_NTZ NOT NULL,
+    CLEAR_TIME          TIMESTAMP_NTZ,
+    SEVERITY            VARCHAR(10),       -- CRITICAL, MAJOR, MINOR, WARNING
+    ALARM_CODE          VARCHAR(20),
+    ALARM_TEXT          VARCHAR(500),
+    CATEGORY            VARCHAR(30),       -- HARDWARE, SOFTWARE, LINK, POWER, ENVIRONMENTAL
+    AFFECTED_SERVICE    VARCHAR(50),
+    ACKNOWLEDGED_BY     VARCHAR(50),
+    TICKET_ID           VARCHAR(20),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Nokia NSP network alarms/faults. FM (Fault Management) data.';
+
+-- Source: Nokia NSP (Site/Topology)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.NOKIA_SITE_TOPOLOGY (
+    SITE_ID             VARCHAR(20) NOT NULL,
+    SITE_NAME           VARCHAR(100),
+    SITE_TYPE           VARCHAR(20),       -- MACRO, SMALL_CELL, INDOOR, ROOFTOP
+    LATITUDE            FLOAT,
+    LONGITUDE           FLOAT,
+    ADDRESS             VARCHAR(200),
+    CITY                VARCHAR(100),
+    STATE               VARCHAR(5),
+    REGION              VARCHAR(50),
+    MARKET              VARCHAR(50),
+    TECHNOLOGY_SUPPORT  ARRAY,             -- ['4G', '5G_NSA', '5G_SA']
+    SECTOR_COUNT        NUMBER(3),
+    ANTENNA_HEIGHT_M    NUMBER(5,1),
+    BACKHAUL_TYPE       VARCHAR(20),       -- FIBER, MICROWAVE, SATELLITE
+    CAPACITY_TIER       VARCHAR(10),
+    INSTALL_DATE        DATE,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Nokia NSP site/cell tower topology. Geographic and capacity data.';
+
+-- Source: Genesys Cloud (Contact Center)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.GENESYS_INTERACTION (
+    INTERACTION_ID      VARCHAR(50) NOT NULL,
+    SUBSCRIBER_ID       VARCHAR(20),
+    MSISDN              VARCHAR(20),
+    AGENT_ID            VARCHAR(30),
+    QUEUE_NAME          VARCHAR(100),
+    MEDIA_TYPE          VARCHAR(20),       -- VOICE, CHAT, EMAIL, SMS, SOCIAL
+    DIRECTION           VARCHAR(10),
+    START_DATETIME      TIMESTAMP_NTZ,
+    END_DATETIME        TIMESTAMP_NTZ,
+    HANDLE_TIME_SEC     NUMBER(10),
+    WAIT_TIME_SEC       NUMBER(10),
+    IVR_TIME_SEC        NUMBER(10),
+    WRAP_UP_CODE        VARCHAR(50),       -- BILLING_INQUIRY, TECH_SUPPORT, PLAN_CHANGE, COMPLAINT, CANCEL_REQUEST
+    DISPOSITION         VARCHAR(30),
+    SENTIMENT_SCORE     NUMBER(5,4),
+    NPS_SCORE           NUMBER(2),
+    FIRST_CONTACT_RESOLUTION BOOLEAN,
+    TRANSFER_COUNT      NUMBER(3),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'Genesys Cloud contact center interactions. All channels. NPS captured post-call.';
+
+-- Source: HubSpot (Marketing)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.HUBSPOT_CAMPAIGN (
+    CAMPAIGN_ID         VARCHAR(30) NOT NULL,
+    CAMPAIGN_NAME       VARCHAR(200),
+    CAMPAIGN_TYPE       VARCHAR(30),       -- EMAIL, SMS, PUSH, SOCIAL, DISPLAY, DIRECT_MAIL
+    OBJECTIVE           VARCHAR(50),       -- ACQUISITION, UPSELL, RETENTION, WINBACK
+    TARGET_SEGMENT      VARCHAR(50),
+    START_DATE          DATE,
+    END_DATE            DATE,
+    BUDGET              NUMBER(12,2),
+    ACTUAL_SPEND        NUMBER(12,2),
+    IMPRESSIONS         NUMBER(15),
+    CLICKS              NUMBER(10),
+    CONVERSIONS         NUMBER(10),
+    REVENUE_ATTRIBUTED  NUMBER(12,2),
+    STATUS              VARCHAR(20),
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'HubSpot marketing campaigns. Performance and attribution data.';
+
+-- Source: HubSpot (Campaign Contacts)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.HUBSPOT_CAMPAIGN_CONTACT (
+    CAMPAIGN_ID         VARCHAR(30) NOT NULL,
+    SUBSCRIBER_ID       VARCHAR(20) NOT NULL,
+    SENT_DATETIME       TIMESTAMP_NTZ,
+    DELIVERED_FLAG      BOOLEAN,
+    OPENED_FLAG         BOOLEAN,
+    CLICKED_FLAG        BOOLEAN,
+    CONVERTED_FLAG      BOOLEAN,
+    UNSUBSCRIBED_FLAG   BOOLEAN,
+    OFFER_PRESENTED     VARCHAR(100),
+    OFFER_ACCEPTED      BOOLEAN,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'HubSpot campaign-to-contact level engagement. Offer acceptance tracking.';
+
+-- Source: Custom IoT Platform (Enterprise)
+CREATE OR REPLACE TABLE HORIZON_TELCO.SILVER.IOT_DEVICE_SESSION (
+    SESSION_ID          VARCHAR(50) NOT NULL,
+    DEVICE_ID           VARCHAR(50),
+    SIM_ICCID           VARCHAR(25),
+    ENTERPRISE_CUSTOMER_ID VARCHAR(20),
+    SESSION_START       TIMESTAMP_NTZ,
+    SESSION_END         TIMESTAMP_NTZ,
+    BYTES_TOTAL         NUMBER(15),
+    CONNECTION_TYPE     VARCHAR(10),       -- NB_IOT, LTE_M, 4G, 5G
+    DEVICE_TYPE         VARCHAR(30),       -- METER, TRACKER, SENSOR, GATEWAY, CAMERA
+    SIGNAL_STRENGTH_DBM NUMBER(5),
+    LOCATION_CELL_ID    VARCHAR(20),
+    SLA_MET_FLAG        BOOLEAN,
+    _LOADED_AT          TIMESTAMP_NTZ DEFAULT CURRENT_TIMESTAMP()
+) COMMENT = 'IoT device connectivity sessions. Enterprise IoT service management.';
+
+-- ============================================================================
+-- GOLD LAYER - Business-ready dimensional model
+-- ============================================================================
+CREATE SCHEMA IF NOT EXISTS HORIZON_TELCO.GOLD;
+
+-- Dimensions
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.DIM_SUBSCRIBER (
+    SUBSCRIBER_KEY      NUMBER AUTOINCREMENT,
+    SUBSCRIBER_ID       VARCHAR(20) NOT NULL,
+    ACCOUNT_ID          VARCHAR(20),
+    MSISDN              VARCHAR(20),
+    SUBSCRIBER_TYPE     VARCHAR(20),
+    SEGMENT             VARCHAR(30),
+    CURRENT_PLAN        VARCHAR(100),
+    SPEED_TIER          VARCHAR(20),
+    MONTHLY_RECURRING   NUMBER(10,2),
+    TENURE_MONTHS       NUMBER(5),
+    CONTRACT_REMAINING_MONTHS NUMBER(5),
+    CREDIT_CLASS        VARCHAR(10),
+    STATE               VARCHAR(5),
+    CITY                VARCHAR(100),
+    ACTIVATION_DATE     DATE,
+    _VALID_FROM         TIMESTAMP_NTZ,
+    _VALID_TO           TIMESTAMP_NTZ,
+    _IS_CURRENT         BOOLEAN
+) COMMENT = 'Subscriber dimension - SCD2. Unified Amdocs + enrichment.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.DIM_SITE (
+    SITE_KEY            NUMBER AUTOINCREMENT,
+    SITE_ID             VARCHAR(20) NOT NULL,
+    SITE_NAME           VARCHAR(100),
+    SITE_TYPE           VARCHAR(20),
+    LATITUDE            FLOAT,
+    LONGITUDE           FLOAT,
+    CITY                VARCHAR(100),
+    STATE               VARCHAR(5),
+    REGION              VARCHAR(50),
+    MARKET              VARCHAR(50),
+    TECHNOLOGY_SUPPORT  VARCHAR(50),
+    CAPACITY_TIER       VARCHAR(10),
+    BACKHAUL_TYPE       VARCHAR(20)
+) COMMENT = 'Cell site/tower dimension with geographic data.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.DIM_PLAN (
+    PLAN_KEY            NUMBER AUTOINCREMENT,
+    PLAN_CODE           VARCHAR(20) NOT NULL,
+    PLAN_NAME           VARCHAR(100),
+    PLAN_TYPE           VARCHAR(20),
+    MONTHLY_PRICE       NUMBER(10,2),
+    DATA_ALLOWANCE_GB   NUMBER(10,2),
+    SPEED_TIER          VARCHAR(20),
+    IS_5G               BOOLEAN,
+    IS_UNLIMITED        BOOLEAN,
+    LAUNCH_DATE         DATE,
+    RETIRE_DATE         DATE
+) COMMENT = 'Plan/tariff dimension.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.DIM_DATE (
+    DATE_KEY            NUMBER NOT NULL,
+    FULL_DATE           DATE NOT NULL,
+    YEAR                NUMBER(4),
+    QUARTER             NUMBER(1),
+    MONTH               NUMBER(2),
+    WEEK                NUMBER(2),
+    DAY_OF_WEEK         NUMBER(1),
+    IS_WEEKEND          BOOLEAN,
+    FISCAL_YEAR         NUMBER(4),
+    FISCAL_PERIOD       NUMBER(2)
+) COMMENT = 'Standard date dimension.';
+
+-- Facts
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.FACT_USAGE_DAILY (
+    SUBSCRIBER_KEY      NUMBER,
+    DATE_KEY            NUMBER,
+    VOICE_MINUTES       NUMBER(10),
+    SMS_COUNT           NUMBER(10),
+    DATA_BYTES_DL       NUMBER(15),
+    DATA_BYTES_UL       NUMBER(15),
+    DATA_SESSIONS       NUMBER(10),
+    AVG_THROUGHPUT_MBPS NUMBER(10,2),
+    AVG_LATENCY_MS      NUMBER(10,2),
+    ROAMING_FLAG        BOOLEAN,
+    OVER_ALLOWANCE_FLAG BOOLEAN,
+    REVENUE_USAGE       NUMBER(10,4)
+) COMMENT = 'Daily subscriber usage aggregation. Voice + data + SMS.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.FACT_BILLING (
+    SUBSCRIBER_KEY      NUMBER,
+    DATE_KEY            NUMBER,
+    RECURRING_REVENUE   NUMBER(12,2),
+    USAGE_REVENUE       NUMBER(12,2),
+    ONE_TIME_REVENUE    NUMBER(12,2),
+    TOTAL_REVENUE       NUMBER(12,2),
+    PAYMENT_AMOUNT      NUMBER(12,2),
+    BALANCE_OUTSTANDING NUMBER(12,2),
+    DAYS_PAST_DUE       NUMBER(5),
+    ARPU                NUMBER(10,2)
+) COMMENT = 'Billing/revenue fact. Monthly grain. ARPU calculation.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.FACT_NETWORK_HOURLY (
+    SITE_KEY            NUMBER,
+    DATE_KEY            NUMBER,
+    HOUR                NUMBER(2),
+    TECHNOLOGY          VARCHAR(10),
+    ACTIVE_USERS        NUMBER(10),
+    PRB_UTILIZATION_PCT NUMBER(5,2),
+    THROUGHPUT_DL_MBPS  NUMBER(10,2),
+    LATENCY_MS          NUMBER(10,2),
+    PACKET_LOSS_PCT     NUMBER(5,4),
+    CALL_DROP_RATE      NUMBER(5,4),
+    HANDOVER_SUCCESS_PCT NUMBER(7,4),
+    ALARM_COUNT         NUMBER(5),
+    CRITICAL_ALARM_FLAG BOOLEAN
+) COMMENT = 'Hourly network performance by site. Capacity and quality KPIs.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.FACT_CHURN_EVENT (
+    SUBSCRIBER_KEY      NUMBER,
+    DATE_KEY            NUMBER,
+    CHURN_TYPE          VARCHAR(20),       -- VOLUNTARY, INVOLUNTARY, PORT_OUT
+    CHURN_REASON        VARCHAR(50),
+    TENURE_AT_CHURN     NUMBER(5),
+    LAST_PLAN           VARCHAR(100),
+    LAST_ARPU           NUMBER(10,2),
+    NPS_LAST            NUMBER(2),
+    COMPLAINT_COUNT_90D NUMBER(5),
+    DATA_USAGE_TREND    VARCHAR(10),       -- INCREASING, STABLE, DECLINING
+    RETENTION_OFFERED   BOOLEAN,
+    RETENTION_ACCEPTED  BOOLEAN
+) COMMENT = 'Churn event fact. Root cause and retention attempt tracking.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.FACT_CONTACT_CENTER (
+    INTERACTION_KEY     NUMBER AUTOINCREMENT,
+    SUBSCRIBER_KEY      NUMBER,
+    DATE_KEY            NUMBER,
+    MEDIA_TYPE          VARCHAR(20),
+    DIRECTION           VARCHAR(10),
+    HANDLE_TIME_SEC     NUMBER(10),
+    WAIT_TIME_SEC       NUMBER(10),
+    WRAP_UP_CATEGORY    VARCHAR(50),
+    SENTIMENT_SCORE     NUMBER(5,4),
+    NPS_SCORE           NUMBER(2),
+    FCR_FLAG            BOOLEAN,
+    TRANSFER_COUNT      NUMBER(3)
+) COMMENT = 'Contact center interaction fact. Customer experience metrics.';
+
+-- Aggregates
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.AGG_SUBSCRIBER_HEALTH (
+    SUBSCRIBER_KEY      NUMBER,
+    COMPUTED_DATE       DATE,
+    CHURN_PROPENSITY    NUMBER(5,4),
+    UPSELL_PROPENSITY   NUMBER(5,4),
+    NETWORK_QUALITY_SCORE NUMBER(5,2),
+    ENGAGEMENT_SCORE    NUMBER(5,2),
+    PAYMENT_HEALTH_SCORE NUMBER(5,2),
+    COMPLAINT_TREND     VARCHAR(10),       -- IMPROVING, STABLE, WORSENING
+    USAGE_TREND_DATA    VARCHAR(10),
+    USAGE_TREND_VOICE   VARCHAR(10),
+    OVERALL_HEALTH_TIER VARCHAR(10),       -- GREEN, YELLOW, RED
+    DAYS_TO_CONTRACT_END NUMBER(5),
+    RECOMMENDED_ACTION  VARCHAR(50)
+) COMMENT = 'Weekly subscriber health composite score. Churn + upsell propensity.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.AGG_NETWORK_CAPACITY (
+    SITE_KEY            NUMBER,
+    DATE_KEY            NUMBER,
+    PEAK_UTILIZATION_PCT NUMBER(5,2),
+    AVG_UTILIZATION_PCT NUMBER(5,2),
+    CAPACITY_HEADROOM_PCT NUMBER(5,2),
+    FORECAST_EXHAUSTION_DATE DATE,
+    CONGESTION_HOURS    NUMBER(3),
+    AFFECTED_SUBSCRIBERS NUMBER(10),
+    UPGRADE_PRIORITY    VARCHAR(10)        -- CRITICAL, HIGH, MEDIUM, LOW
+) COMMENT = 'Daily network capacity analysis by site. Congestion prediction.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.AGG_CAMPAIGN_PERFORMANCE (
+    CAMPAIGN_ID         VARCHAR(30),
+    SEGMENT             VARCHAR(50),
+    SUBSCRIBERS_TARGETED NUMBER(10),
+    SUBSCRIBERS_REACHED NUMBER(10),
+    OPEN_RATE           NUMBER(5,4),
+    CLICK_RATE          NUMBER(5,4),
+    CONVERSION_RATE     NUMBER(5,4),
+    REVENUE_ATTRIBUTED  NUMBER(12,2),
+    COST_PER_ACQUISITION NUMBER(10,2),
+    ROI_PCT             NUMBER(7,4),
+    INCREMENTAL_ARPU    NUMBER(10,2)
+) COMMENT = 'Campaign performance summary. Attribution and ROI by segment.';
+
+CREATE OR REPLACE TABLE HORIZON_TELCO.GOLD.AGG_REVENUE_ASSURANCE (
+    DATE_KEY            NUMBER,
+    SERVICE_TYPE        VARCHAR(20),       -- VOICE, DATA, SMS, ROAMING
+    CDR_RATED_COUNT     NUMBER(15),
+    CDR_BILLED_COUNT    NUMBER(15),
+    RATED_REVENUE       NUMBER(15,2),
+    BILLED_REVENUE      NUMBER(15,2),
+    LEAKAGE_AMOUNT      NUMBER(15,2),
+    LEAKAGE_PCT         NUMBER(5,4),
+    ANOMALY_FLAG        BOOLEAN
+) COMMENT = 'Daily revenue assurance reconciliation. Rated vs billed leakage detection.';
+
